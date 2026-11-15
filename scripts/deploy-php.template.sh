@@ -83,8 +83,23 @@ if [ ! -f "Dockerfile" ] || [[ "$FORCE_RECREATE" == "force" ]]; then
   fi
   echo "[deploy] Generating Dockerfile for PHP Lumen (mode: $MODE)"
 
-  cat > Dockerfile <<'EOF'
-FROM php:8.2-fpm-alpine
+  # PHP base image is PINNED to an exact patch release (PHP2Shell,
+  # CVE-2026-109618/-109619, fixed in 8.2.35 / 8.3.36 / 8.4.27 / 8.5.12).
+  # A floating tag like php:8.2-fpm-alpine builds with whatever the local
+  # Docker cache holds. Override per project with PHP_IMAGE=..., never use
+  # 8.1 or older (EOL). Raise the default when php.net ships a security fix.
+  PHP_IMAGE="${PHP_IMAGE:-php:8.2.35-fpm-alpine3.23}"
+  case "$PHP_IMAGE" in
+    *:[0-9]*.[0-9]*.[0-9]*) ;;
+    *) echo "[deploy] ERROR: PHP_IMAGE must be pinned to a patch release (e.g. php:8.2.35-fpm-alpine3.23), got: $PHP_IMAGE" >&2; exit 1 ;;
+  esac
+  case "$PHP_IMAGE" in
+    *:[0-7].*|*:8.[01].*) echo "[deploy] ERROR: PHP_IMAGE $PHP_IMAGE is end-of-life, use 8.2 or newer" >&2; exit 1 ;;
+  esac
+  echo "[deploy] PHP base image: $PHP_IMAGE"
+
+  echo "FROM $PHP_IMAGE" > Dockerfile
+  cat >> Dockerfile <<'EOF'
 
 WORKDIR /app
 

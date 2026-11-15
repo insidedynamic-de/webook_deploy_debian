@@ -334,6 +334,19 @@ See `OPTIMIZATION.md` for:
 
 You control your real logic – the template is a starting point with best practices built-in.
 
+### PHP projects (`deploy-php.template.sh`)
+
+For `php|lumen|laravel` projects `init.sh` copies `deploy-php.template.sh`. It generates the
+Dockerfile from a **pinned** PHP base image (default `php:8.2.35-fpm-alpine3.23`, PHP2Shell
+CVE-2026-109618/-109619 fix). Override per project:
+
+```bash
+PHP_IMAGE=php:8.3.36-fpm-alpine3.23 ./deploy.sh prod force
+```
+
+The script refuses floating tags (`php:8.2-fpm-alpine`, `php:latest`) and PHP 8.1 or older (EOL).
+Existing projects keep their old Dockerfile until you run `./deploy.sh <mode> force` once.
+
 ---
 
 ## 6. webhook.js
